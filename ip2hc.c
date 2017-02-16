@@ -10,7 +10,7 @@ struct pair
 {
   unsigned int hcount;
   unsigned int ip;
-}ip2hc;
+}ip2hc[BUFFERSIZE];
   //todo
   /*1. collect traces of its clients to obtain both IP ad-dresses and the corresponding hop-count values
     2.After the initial population of the mapping table and activation,
