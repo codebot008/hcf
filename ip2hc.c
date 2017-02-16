@@ -5,4 +5,7 @@
 #include <linux/udp.h>
 #include <linux/ip.h>
 #define BUFFERSIZE 10
-
+struct pair ip2hc
+{
+  
+}
