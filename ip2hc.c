@@ -7,5 +7,5 @@
 #define BUFFERSIZE 10
 struct pair ip2hc
 {
-  
+  //todo
 }
