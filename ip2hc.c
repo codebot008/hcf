@@ -16,6 +16,7 @@ unsigned int receivedHopCount, flag;
 unsigned int i, mid, initialTTL;
 unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
 //todo
+i=0;
 static unsigned int findInitialTTL(unsigned int ttl, unsigned int l, unsigned int h)
 {
     while(l <= h)
@@ -51,8 +52,19 @@ static unsigned int hook_func(unsigned int hooknum, struct sk_buff *skb, const s
   struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb); 
   printk(KERN_ALERT "Packet coming in from %u", ip_header->saddr);
   receivedHopCount = hopCountCompute(ip_header->ttl);
-  
+  if(i<BUFFERSIZE)
+  {
+    ip2hc[i].hcount=receivedHopCount;
+    ip2hc[i].ip=ip_header->saddr;
+    i++;
+  }
+  else
+  {
+    printk(KERN_ALERT "size of table exhausted");
+  }
 }
+
+
 static struct nf_hook_ops nfho = {
     .hook       = hook_func,
     .hooknum    = 1, /* NF_IP_LOCAL_IN */
