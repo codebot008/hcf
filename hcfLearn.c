@@ -7,8 +7,8 @@
 #define BUFFERSIZE 10
 
 extern struct pair ip2hc[BUFFERSIZE];
-int receivedHopCount;
-int i;
+unsigned int receivedHopCount, flag;
+unsigned int i, mid, initialTTL;
 unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
 
 static unsigned int findInitialTTL(unsigned int ttl, unsigned int l, unsigned int h)
@@ -47,27 +47,64 @@ static unsigned int hopCount(unsigned int source)
 
 static unsigned int hopCountCompute(unsigned int ttl)
 {
+    intialTTL = findInitialTTL(ttl);
+    return (intialTTL - ttl);
+}
+
+static unsigned int exceptionHopCountCompute(unsigned int ttl)
+{
     
 }
 
 
 static unsigned int hook_func(unsigned int hooknum, struct sk_buff *skb, const struct net_device *in, const struct net_device *out, int (*okfn) (struct sk_buff *))
 {
-    //struct udphdr *udp_header;
+
     struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb);    
-
+    flag = 0;
     printk(KERN_ALERT "Packet coming in from %u", ip_header->saddr);
-    
-    if()
-
-/*    if (ip_header->protocol == 17) {
-        udp_header = (struct udphdr *)skb_transport_header(skb);
-        printk(KERN_INFO "Drop udp packet.\n");
-
-        return NF_DROP;
+    receivedHopCount = hopCountCompute(ip_header->ttl);
+    if(hopCount(ip_header->saddr) == receivedHopCount)
+    {
+        return NF_ACCEPT; //Packet is legitimate
     }
-*/
-    return NF_ACCEPT;
+    else  //Checking for cases where 
+    {
+        initialTTL = findInitialTTL(ip_header->ttl);
+        if(initialTTL == 30)
+        {
+            if(32 - ip_header->ttl == hopCount(ip_header->saddr))
+            {
+                flag = 1;
+            }
+        }
+        else if(initialTTL == 32)
+        {
+            if(60 - ip_header->ttl == hopCount(ip_header->saddr))
+            {
+                flag = 1;
+            }
+        }
+        else if(initialTTL == 60)
+        {
+            if(64 - ip_header->ttl == hopCount(ip_header->saddr))
+            {
+                flag = 1;
+            }
+        }
+        if(flag == 1)
+        {
+            return NF_ACCEPT;
+        }
+        else
+        {
+            return NF_DROP;
+        }
+    }
+    
+// Verification here
+    
+    
 }
 
 static struct nf_hook_ops nfho = {
