@@ -53,7 +53,7 @@ static unsigned int hopCountCompute(unsigned int ttl)
 
 static unsigned int exceptionHopCountCompute(unsigned int ttl)
 {
-    
+    //TODO
 }
 
 
@@ -68,7 +68,7 @@ static unsigned int hook_func(unsigned int hooknum, struct sk_buff *skb, const s
     {
         return NF_ACCEPT; //Packet is legitimate
     }
-    else  //Checking for cases where 
+    else  //Checking for corner cases of initial TTL.
     {
         initialTTL = findInitialTTL(ip_header->ttl);
         if(initialTTL == 30)
@@ -101,10 +101,6 @@ static unsigned int hook_func(unsigned int hooknum, struct sk_buff *skb, const s
             return NF_DROP;
         }
     }
-    
-// Verification here
-    
-    
 }
 
 static struct nf_hook_ops nfho = {
