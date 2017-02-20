@@ -15,7 +15,7 @@ extern double expDistribution[SAMPLESIZE];
 //unsigned int hcfState;  // 0 = Learning, 1 = Filtering.
 //static unsigned int packetCounter;
 //static unsigned int sampleCounter;
-//static unsigned int errorCounter, correctCounter;
+//static unsigned int errorLearnCounter, errorFilterCounter;
 //unsigned int receivedHopCount, flag;
 //unsigned int i, mid, initialTTL;
 //unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
@@ -29,7 +29,7 @@ static unsigned int initLearn(void)
 {
     packetCounter = 0;
     sampleCounter = 0;
-    errorCounter = 0;
+    errorLearnCounter = 0;
     start_time = jiffies;
     flag = 0;
     return 0;
@@ -38,7 +38,7 @@ static unsigned int initLearn(void)
 static unsigned int initFilter(void)
 {
     packetCounter = 0;
-    correctCounter = 0;
+    errorFilterCounter = 0;
     start_time = jiffies;
 }
 
@@ -83,7 +83,7 @@ static unsigned int hopCountCompute(unsigned int ttl)
     return (intialTTL - ttl);
 }
 
-static unsigned int checkErrorAverage(unsigned int errorCount)
+static unsigned int checkErrorLearnAverage(unsigned int errorCount)
 {
     total_time = jiffies - start_time;
     errorAvg = errorCount / total_time;
@@ -93,11 +93,11 @@ static unsigned int checkErrorAverage(unsigned int errorCount)
         return 0;
 }
 
-static unsigned int checkCorrectAverage(unsigned int correctCount)
+static unsigned int checkErrorFilterAverage(unsigned int errorCount)
 {
     total_time = jiffies - start_time;
-    correctAvg = correctCount / total_time;
-    if(correctAvg > filterThreshold)
+    errorAvg = errorCount / total_time;
+    if(errorAvg < filterThreshold)
         return 1;
     else
         return 0;
@@ -146,10 +146,11 @@ static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const st
             }
             else
             {
-                errorCounter++;
-                if(checkErrorAverage(errorCounter))
+                errorLearnCounter++;
+                if(checkErrorAverage(errorLearnCounter))
                 {
                     hcfState = 1;
+                    return 0;
                 }
                 else
                 {
@@ -202,19 +203,20 @@ static unsigned int hcfFilter(unsigned int hooknum, struct sk_buff *skb, const s
         }
         if(flag == 1)
         {
-            correctCounter++;
-            if(checkCorrectAverage(correctCounter))
+            NF_ACCEPT;
+        }
+        else
+        {
+            errorFilterCounter++;
+            if(checkErrorAverage(errorFilterCounter))
             {
                 hcfState = 0;
+                return 0;
             }
             else
             {
                 return NF_ACCEPT;
             }
-        }
-        else
-        {
-            return NF_DROP;
         }
     }
 }

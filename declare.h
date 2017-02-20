@@ -1,4 +1,4 @@
-static unsigned int packetCounter, sampleCounter, errorCounter, correctCounter;
+static unsigned int packetCounter, sampleCounter, errorLearnCounter, errorFilterCounter;
 static unsigned int hcfState;
 static int receivedHopCount, flag;
 unsigned int i, mid, initialTTL;
