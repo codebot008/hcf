@@ -179,15 +179,7 @@ static unsigned int hcfFilter(unsigned int hooknum, struct sk_buff *skb, const s
             }
             else
             {
-                errorCounter++;
-                if(checkErrorAverage(errorCounter))
-                {
-                    hcfState = 1;
-                }
-                else
-                {
-                    return NF_ACCEPT;
-                }
+                return NF_DROP;
             }
         }
     
