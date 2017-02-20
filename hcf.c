@@ -5,24 +5,42 @@
 #include <linux/udp.h>
 #include <linux/ip.h>
 #include<linux/jiffies.h>
+#include "declare.h"
 #define BUFFERSIZE 10
 #define SAMPLESIZE 10000
 
 
 extern struct pair ip2hc[BUFFERSIZE];
 extern double expDistribution[SAMPLESIZE];
-unsigned int hcfState;  // 0 = Learning, 1 = Filtering.
-static unsigned int packetCounter = 0;
-static unsigned int sampleCounter = 0;
-static unsigned int errorCounter = 0;
-unsigned int receivedHopCount, flag;
-unsigned int i, mid, initialTTL;
-unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
-unsigned long start_time;
-unsigned long total_time;
-unsigned long errorAvg, learnThreshold, filterThreshold;
+//unsigned int hcfState;  // 0 = Learning, 1 = Filtering.
+//static unsigned int packetCounter;
+//static unsigned int sampleCounter;
+//static unsigned int errorCounter, correctCounter;
+//unsigned int receivedHopCount, flag;
+//unsigned int i, mid, initialTTL;
+//unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
+//unsigned long start_time;
+//unsigned long total_time;
+//unsigned long errorAvg, learnThreshold, filterThreshold;
 
 //Make an initialisation function for learn and filter states
+
+static unsigned int initLearn(void)
+{
+    packetCounter = 0;
+    sampleCounter = 0;
+    errorCounter = 0;
+    start_time = jiffies;
+    flag = 0;
+    return 0;
+}
+
+static unsigned int initFilter(void)
+{
+    packetCounter = 0;
+    correctCounter = 0;
+    start_time = jiffies;
+}
 
 
 static unsigned int findInitialTTL(unsigned int ttl, unsigned int l, unsigned int h)
@@ -75,14 +93,23 @@ static unsigned int checkErrorAverage(unsigned int errorCount)
         return 0;
 }
 
+static unsigned int checkCorrectAverage(unsigned int correctCount)
+{
+    total_time = jiffies - start_time;
+    correctAvg = correctCount / total_time;
+    if(correctAvg > filterThreshold)
+        return 1;
+    else
+        return 0;
+}
+
 static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const struct net_device *in, const struct net_device *out)
 {
     packetCounter++;
     if(packetCounter == expDistribution[sampleCounter])
     {
-        sampleCounter++;
-        struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb);    
-        flag = 0;
+        struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb);
+        sampleCounter++;            
         printk(KERN_ALERT "Packet coming in from %u", ip_header->saddr);
         receivedHopCount = hopCountCompute(ip_header->ttl);
         if(hopCount(ip_header->saddr) == receivedHopCount)
@@ -142,47 +169,54 @@ static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const st
 static unsigned int hcfFilter(unsigned int hooknum, struct sk_buff *skb, const struct net_device *in, const struct net_device *out)
 {
     struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb);    
-        flag = 0;
-        printk(KERN_ALERT "Packet coming in from %u", ip_header->saddr);
-        receivedHopCount = hopCountCompute(ip_header->ttl);
-        if(hopCount(ip_header->saddr) == receivedHopCount)
+    flag = 0;
+    printk(KERN_ALERT "Packet coming in from %u", ip_header->saddr);
+    receivedHopCount = hopCountCompute(ip_header->ttl);
+    if(hopCount(ip_header->saddr) == receivedHopCount)
+    {
+        return NF_ACCEPT; //Packet is legitimate
+    }
+    else  //Checking for corner cases of initial TTL.
+    {
+        initialTTL = findInitialTTL(ip_header->ttl);
+        if(initialTTL == initialTTLSet[0])
         {
-            return NF_ACCEPT; //Packet is legitimate
+            if(initialTTLSet[1] - ip_header->ttl == hopCount(ip_header->saddr))
+            {
+                flag = 1;
+            }
         }
-        else  //Checking for corner cases of initial TTL.
+        else if(initialTTL == initialTTLSet[1])
         {
-            initialTTL = findInitialTTL(ip_header->ttl);
-            if(initialTTL == initialTTLSet[0])
+            if(initialTTLSet[2] - ip_header->ttl == hopCount(ip_header->saddr))
             {
-                if(initialTTLSet[1] - ip_header->ttl == hopCount(ip_header->saddr))
-                {
-                    flag = 1;
-                }
+                flag = 1;
             }
-            else if(initialTTL == initialTTLSet[1])
+        }
+        else if(initialTTL == initialTTLSet[2])
+        {
+            if(initialTTLSet[3] - ip_header->ttl == hopCount(ip_header->saddr))
             {
-                if(initialTTLSet[2] - ip_header->ttl == hopCount(ip_header->saddr))
-                {
-                    flag = 1;
-                }
+                flag = 1;
             }
-            else if(initialTTL == initialTTLSet[2])
+        }
+        if(flag == 1)
+        {
+            correctCounter++;
+            if(checkCorrectAverage(correctCounter))
             {
-                if(initialTTLSet[3] - ip_header->ttl == hopCount(ip_header->saddr))
-                {
-                    flag = 1;
-                }
-            }
-            if(flag == 1)
-            {
-                return NF_ACCEPT;
+                hcfState = 0;
             }
             else
             {
-                return NF_DROP;
+                return NF_ACCEPT;
             }
         }
-    
+        else
+        {
+            return NF_DROP;
+        }
+    }
 }
                              
 
@@ -212,7 +246,6 @@ static struct nf_hook_ops nfho = {
 static int __init init_nf(void)
 {
     printk(KERN_INFO "Register netfilter module.\n");
-    start_time = jiffies;
     //learnThreshold = ;
     nf_register_hook(&nfho);
     
