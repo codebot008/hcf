@@ -12,18 +12,7 @@
 
 extern struct pair ip2hc[BUFFERSIZE];
 extern double expDistribution[SAMPLESIZE];
-//unsigned int hcfState;  // 0 = Learning, 1 = Filtering.
-//static unsigned int packetCounter;
-//static unsigned int sampleCounter;
-//static unsigned int errorLearnCounter, errorFilterCounter;
-//unsigned int receivedHopCount, flag;
-//unsigned int i, mid, initialTTL;
-//unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
-//unsigned long start_time;
-//unsigned long total_time;
-//unsigned long errorAvg, learnThreshold, filterThreshold;
 
-//Make an initialisation function for learn and filter states
 
 static unsigned int initLearn(void)
 {
