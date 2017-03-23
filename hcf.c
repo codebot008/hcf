@@ -82,7 +82,7 @@ static unsigned int checkErrorLearnAverage(unsigned int errorCount)
         return 0;
 }
 
-static unsigned int checkErrorFilterAverage(unsigned int errorCount)
+static unsigned int checkErrorFilterAverage(unsigned int errorCount)  //Problem is, with running average, the initial average would be small.
 {
     total_time = jiffies - start_time;
     errorAvg = errorCount / total_time;
@@ -152,7 +152,7 @@ static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const st
     {
         return NF_ACCEPT;
     }
-    
+    //Add code to check server load based on the no of established TCP connections and then update the IP2HC table if the load is low.
 }
 
 
@@ -204,7 +204,7 @@ static unsigned int hcfFilter(unsigned int hooknum, struct sk_buff *skb, const s
             }
             else
             {
-                return NF_ACCEPT;
+                return NF_DROP;
             }
         }
     }
