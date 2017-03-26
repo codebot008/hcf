@@ -45,6 +45,30 @@ static unsigned int hopCountCompute(unsigned int ttl)
     return (intialTTL - ttl);
 }
 
+//updating hop count..if same ip address(already in the table) comes with a new hop count then update the table
+static unsigned int updateIP2HC(struct sk_buff *skb)
+{
+  int flag;
+  flag=0;
+  
+    if((skb -> sk) -> sk_state == TCP_ESTABLISHED)
+    {
+        //Update the appropriate hop count entry in the IP2HC
+        //collect ip address see if in the table then update
+        struct iphdr *ip_header = (struct iphdr *)skb_network_header(skb); 
+        printk(KERN_ALERT "Packet coming in from %u", ip_header->saddr);
+        receivedHopCount = hopCountCompute(ip_header->ttl);
+        
+        for(j=0;j<BUFFERSIZE && flag==0 ;j++)
+        {
+          if(ip_header->saddr==ip2hc[j].ip)
+          {
+            ip2hc[j].hcount=receivedHopCount;
+            flag=1;
+          }
+        }
+    }
+}
 
 static unsigned int hook_func(unsigned int hooknum, struct sk_buff *skb, const struct net_device *in, const struct net_device *out, int (*okfn) (struct sk_buff *))
 {
