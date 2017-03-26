@@ -8,6 +8,7 @@
 #include "declare.h"
 #define BUFFERSIZE 10
 #define SAMPLESIZE 10000
+#define UPDATETHRESHOLD 250
 
 
 extern struct pair ip2hc[BUFFERSIZE];
@@ -92,7 +93,15 @@ static unsigned int checkErrorFilterAverage(unsigned int errorCount)  //Problem 
         return 0;
 }
 
-static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const struct net_device *in, const struct net_device *out)
+static unsigned int updateIP2HC(struct sk_buff *skb)
+{
+    if((skb -> sk) -> sk_state == TCP_ESTABLISHED)
+    {
+        //Update the appropriate hop count entry in the IP2HC
+    }
+}
+
+static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const struct net_device *in, const struct net_device *out) //Insert updateIP2HC to check server load based on the no of established TCP connections and then update the IP2HC table if the load is low.
 {
     packetCounter++;
     if(packetCounter == expDistribution[sampleCounter])
@@ -152,7 +161,6 @@ static unsigned int hcfLearn(unsigned int hooknum, struct sk_buff *skb, const st
     {
         return NF_ACCEPT;
     }
-    //Add code to check server load based on the no of established TCP connections and then update the IP2HC table if the load is low.
 }
 
 
