@@ -54,6 +54,10 @@ static unsigned int hook_func(unsigned int hooknum, struct sk_buff *skb, const s
   receivedHopCount = hopCountCompute(ip_header->ttl);
   if(i<BUFFERSIZE)
   {
+    /*1.if same if header and differnt hop count then use link list to put new hop counts for same ipheader but this case wont arise as for same 
+    ip address we have a single hop count value.. but if we were make a cluster such that for a same hop count we have many ip addresses then
+    our purpose will of giving importance to ip address will not be fruitful*/
+    //2.for initailization we are not considering the case that same ip address will have differnt hop count value
     ip2hc[i].hcount=receivedHopCount;
     ip2hc[i].ip=ip_header->saddr;
     i++;
