@@ -15,7 +15,7 @@ struct pair
 unsigned int receivedHopCount, flag;
 unsigned int i, mid, initialTTL;
 unsigned int initialTTLSet[6] = {30, 32, 60, 64, 128, 255};
-//todo
+
 i=0;
 static unsigned int findInitialTTL(unsigned int ttl, unsigned int l, unsigned int h)
 {
@@ -48,7 +48,7 @@ static unsigned int hopCountCompute(unsigned int ttl)
 //updating hop count..if same ip address(already in the table) comes with a new hop count then update the table
 static unsigned int updateIP2HC(struct sk_buff *skb)
 {
-  int flag;
+  int flag,j;
   flag=0;
   
     if((skb -> sk) -> sk_state == TCP_ESTABLISHED)
